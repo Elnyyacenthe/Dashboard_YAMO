@@ -28,3 +28,5 @@ prisma/migrations/dev.db*
 # Scripts de test contenant des credentials
 test-db.mjs
 test-*.mjs
+
+.claude/

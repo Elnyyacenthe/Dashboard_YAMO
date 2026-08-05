@@ -1,11 +1,26 @@
-import Link from "next/link";
-import { CheckCircle, Loader2 } from "lucide-react";
-
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatXAF, timeAgo } from "@/lib/utils";
-import { ValidatePaymentButton } from "./_components/payment-actions";
+import { PaymentActions } from "./_components/payment-actions";
+
+interface PaymentIntentLike {
+  type?: string;
+  payload?: { tier?: string; months?: number; hours?: number; days?: number };
+}
+interface PaymentMetaLike {
+  declaredPhone?: string;
+  declaredReference?: string;
+}
+
+function intentSummary(intent: unknown): string | null {
+  const i = intent as PaymentIntentLike | null;
+  if (!i?.type) return null;
+  if (i.type === "ESCORT_SUBSCRIPTION") {
+    return `Abonnement ${i.payload?.tier ?? "?"} — ${i.payload?.months ?? "?"} mois`;
+  }
+  return i.type;
+}
 
 export default async function PaymentsPage() {
   const [pending, all, totalPaid] = await Promise.all([
@@ -41,28 +56,50 @@ export default async function PaymentsPage() {
           <p className="text-sm text-muted-foreground">Aucun paiement en attente</p>
         ) : (
           <div className="space-y-2">
-            {pending.map((p) => (
-              <div
-                key={p.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/40 p-3"
-              >
-                <div>
-                  <p className="font-semibold">{formatXAF(p.amount)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {p.user.email} · {p.provider} · {timeAgo(p.createdAt)}
-                  </p>
-                  {p.ad && (
-                    <p className="text-xs text-muted-foreground">
-                      Annonce : {p.ad.title} ({p.tier} {p.durationDays}j)
+            {pending.map((p) => {
+              const summary = intentSummary(p.intent);
+              const meta = p.metadata as PaymentMetaLike | null;
+              return (
+                <div
+                  key={p.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/40 p-3"
+                >
+                  <div>
+                    <p className="font-semibold">
+                      {formatXAF(p.amount)}{" "}
+                      {p.provider === "MANUAL" && (
+                        <Badge variant="outline" className="ml-1 align-middle">
+                          Déclaration manuelle
+                        </Badge>
+                      )}
                     </p>
-                  )}
-                  {p.providerRef && (
-                    <p className="text-xs font-mono text-muted-foreground">Ref: {p.providerRef}</p>
-                  )}
+                    <p className="text-xs text-muted-foreground">
+                      {p.user.name ?? p.user.email} ({p.user.email}) · {p.provider} · {timeAgo(p.createdAt)}
+                    </p>
+                    {summary && <p className="text-xs text-muted-foreground">{summary}</p>}
+                    {p.ad && (
+                      <p className="text-xs text-muted-foreground">
+                        Annonce : {p.ad.title} ({p.tier} {p.durationDays}j)
+                      </p>
+                    )}
+                    {meta?.declaredPhone && (
+                      <p className="text-xs text-muted-foreground">
+                        Envoyé depuis : <span className="font-mono">{meta.declaredPhone}</span>
+                      </p>
+                    )}
+                    {meta?.declaredReference && (
+                      <p className="text-xs text-muted-foreground">
+                        Réf. déclarée : <span className="font-mono">{meta.declaredReference}</span>
+                      </p>
+                    )}
+                    {p.providerRef && (
+                      <p className="text-xs font-mono text-muted-foreground">Ref: {p.providerRef}</p>
+                    )}
+                  </div>
+                  <PaymentActions paymentId={p.id} />
                 </div>
-                <ValidatePaymentButton paymentId={p.id} />
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Card>

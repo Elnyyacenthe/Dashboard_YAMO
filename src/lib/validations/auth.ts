@@ -1,15 +1,21 @@
 import { z } from "zod";
 
 // +237 6XX XX XX XX (Cameroun) ou format international
-const PHONE_REGEX = /^(\+237|237)?[\s-]?6\d{8}$/;
+export const PHONE_REGEX = /^(\+237|237)?[\s-]?6\d{8}$/;
+
+/** Pseudo compte CLIENT allégé (cf. clientQuickAuthAction) — pas d'email/téléphone requis. */
+export const USERNAME_REGEX = /^[a-zA-Z0-9_.-]{2,30}$/;
 
 export const signInSchema = z.object({
   identifier: z
     .string()
-    .min(1, "Email ou téléphone requis")
+    .min(1, "Identifiant requis")
     .refine(
-      (v) => /^\S+@\S+\.\S+$/.test(v) || PHONE_REGEX.test(v.replace(/\s/g, "")),
-      "Email ou numéro camerounais invalide",
+      (v) =>
+        /^\S+@\S+\.\S+$/.test(v) ||
+        PHONE_REGEX.test(v.replace(/\s/g, "")) ||
+        USERNAME_REGEX.test(v),
+      "Identifiant invalide",
     ),
   password: z.string().min(8, "8 caractères minimum"),
 });

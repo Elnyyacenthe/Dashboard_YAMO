@@ -171,6 +171,9 @@ model User {
   emailVerified DateTime?
   phone         String?   @unique
   phoneVerified DateTime?
+  /// v15 — Pseudo pour les comptes CLIENT allégés (favoris/signalement/support),
+  /// sans email ni téléphone. Sert d'identifiant de connexion alternatif.
+  username      String?   @unique
   password      String?
   name          String?
   image         String?
@@ -300,12 +303,14 @@ model SupportTicket {
 }
 
 model SupportMessage {
-  id        String   @id @default(cuid())
-  ticketId  String
-  authorId  String
-  body      String   @db.Text
-  isAdmin   Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  ticketId       String
+  authorId       String
+  body           String   @db.Text
+  isAdmin        Boolean  @default(false)
+  attachmentUrl  String?
+  attachmentName String?
+  createdAt      DateTime @default(now())
 
   ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -377,7 +382,11 @@ model Ad {
   description     String   @db.Text
   price           Int
   priceNight      Int?
+  /// Toujours égal à User.phone (compte propriétaire) — non éditable par
+  /// l'escorte, figé au numéro de création de compte (v16).
   whatsappPhone   String
+  whatsappEnabled Boolean  @default(true)
+  telegramEnabled Boolean  @default(false)
   callPhone       String?
   status          AdStatus @default(PENDING)
   tier            AdTier   @default(STANDARD)

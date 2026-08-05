@@ -22,12 +22,12 @@ export default async function AccountPage({ backUrl = "/compte" }: { backUrl?: s
   if (!user) redirect("/connexion");
 
   // Pour les ADMIN/MODERATOR, lien externe vers affinité.com/admin (cf. dashboard-namespace.ts)
-  const yamoAdminUrl =
+  const affiniteAdminUrl =
     process.env.NEXT_PUBLIC_AFFINITE_ADMIN_URL ??
     `${process.env.NEXT_PUBLIC_AFFINITE_URL ?? "https://affinité.com"}/admin`;
   const dashboardLink =
     user.role === "ADMIN" || user.role === "MODERATOR"
-      ? yamoAdminUrl
+      ? affiniteAdminUrl
       : user.role === "ESCORT"
         ? "/escort/dashboard"
         : "/client";

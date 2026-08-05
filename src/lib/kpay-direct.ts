@@ -96,7 +96,7 @@ export async function kpayOneShotPayment(input: InitPaymentInput): Promise<InitP
       phoneNumber: phone,
       externalId,
       description,
-      metadata: { yamoUserId: input.userId, yamoPaymentId: payment.id, intent: input.intent.type },
+      metadata: { affiniteUserId: input.userId, affinitePaymentId: payment.id, intent: input.intent.type },
     });
 
     await prisma.payment.update({

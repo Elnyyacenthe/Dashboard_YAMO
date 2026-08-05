@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Flame, ShieldAlert, ExternalLink } from "lucide-react";
 import { SITE_NAME } from "@/lib/utils";
 
-const YAMO_URL = process.env.NEXT_PUBLIC_AFFINITE_URL ?? "https://affinité.com";
+const AFFINITE_URL_BASE = process.env.NEXT_PUBLIC_AFFINITE_URL ?? "https://affinité.com";
 
 export function Footer() {
   return (
@@ -30,17 +30,17 @@ export function Footer() {
             <h4 className="mb-3 font-semibold">Site public</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <a href={YAMO_URL} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+                <a href={AFFINITE_URL_BASE} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
                   <ExternalLink className="mr-1 inline h-3 w-3" /> Accueil affinité.com
                 </a>
               </li>
               <li>
-                <a href={`${YAMO_URL}/recherche`} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+                <a href={`${AFFINITE_URL_BASE}/recherche`} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
                   <ExternalLink className="mr-1 inline h-3 w-3" /> Recherche d'annonces
                 </a>
               </li>
               <li>
-                <a href={`${YAMO_URL}/tarifs`} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+                <a href={`${AFFINITE_URL_BASE}/tarifs`} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
                   <ExternalLink className="mr-1 inline h-3 w-3" /> Tarifs Premium
                 </a>
               </li>

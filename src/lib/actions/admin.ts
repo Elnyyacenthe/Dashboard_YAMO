@@ -5,6 +5,7 @@ import type { AdStatus, AdTier, ReportStatus, Role } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { applyIntent } from "@/lib/kpay-direct";
 
 async function requireAdmin() {
   const session = await auth();
@@ -192,37 +193,87 @@ export async function resolveReportAction(
   revalidatePath("/admin/signalements");
 }
 
-/** Validation manuelle d'un paiement. */
+/**
+ * Validation manuelle d'un paiement (K-Pay indisponible ou déclaration
+ * manuelle escorte via Mobile Money direct).
+ *
+ * Si le paiement porte un `intent` (BUMP, ESCORT_SUBSCRIPTION, etc.), on
+ * délègue à `applyIntent` qui applique l'action métier correspondante de
+ * façon idempotente. Sinon on retombe sur l'ancien chemin legacy adId+tier.
+ */
 export async function markPaymentPaidAction(paymentId: string) {
   const admin = await requireAdmin();
   const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
   if (!payment) throw new Error("Paiement introuvable");
+  if (payment.status === "FAILED") throw new Error("Ce paiement a été refusé, impossible de le valider");
+
+  if (payment.intent) {
+    await applyIntent(paymentId);
+  } else if (payment.status !== "PAID") {
+    await prisma.$transaction([
+      prisma.payment.update({
+        where: { id: paymentId },
+        data: { status: "PAID", paidAt: new Date() },
+      }),
+      ...(payment.adId && payment.tier
+        ? [
+            prisma.ad.update({
+              where: { id: payment.adId },
+              data: {
+                tier: payment.tier,
+                promotedUntil: new Date(
+                  Date.now() + (payment.durationDays ?? 30) * 86_400_000,
+                ),
+              },
+            }),
+          ]
+        : []),
+    ]);
+  }
+
+  await prisma.auditLog.create({
+    data: {
+      actorId: admin.id,
+      action: "PAYMENT_MARKED_PAID",
+      entity: "Payment",
+      entityId: paymentId,
+    },
+  });
+  revalidatePath("/admin/paiements");
+}
+
+/** Refuse une déclaration de paiement (ex : référence introuvable côté Mobile Money). */
+export async function rejectPaymentAction(paymentId: string, reason: string) {
+  const admin = await requireAdmin();
+  const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
+  if (!payment) throw new Error("Paiement introuvable");
+  if (payment.intentApplied) throw new Error("Ce paiement a déjà été appliqué, impossible de le refuser");
 
   await prisma.$transaction([
     prisma.payment.update({
       where: { id: paymentId },
-      data: { status: "PAID", paidAt: new Date() },
+      data: {
+        status: "FAILED",
+        metadata: {
+          ...((payment.metadata as Record<string, unknown> | null) ?? {}),
+          rejectionReason: reason,
+        },
+      },
     }),
-    // Si paiement lié à une annonce, on applique le tier
-    ...(payment.adId && payment.tier
-      ? [
-          prisma.ad.update({
-            where: { id: payment.adId },
-            data: {
-              tier: payment.tier,
-              promotedUntil: new Date(
-                Date.now() + (payment.durationDays ?? 30) * 86_400_000,
-              ),
-            },
-          }),
-        ]
-      : []),
+    prisma.notification.create({
+      data: {
+        userId: payment.userId,
+        title: "Paiement refusé",
+        body: `Votre déclaration de paiement de ${payment.amount} FCFA a été refusée. Motif : ${reason}`,
+      },
+    }),
     prisma.auditLog.create({
       data: {
         actorId: admin.id,
-        action: "PAYMENT_MARKED_PAID",
+        action: "PAYMENT_REJECTED",
         entity: "Payment",
         entityId: paymentId,
+        metadata: { reason },
       },
     }),
   ]);

@@ -55,6 +55,24 @@ export const ourFileRouter = {
     })
     .onUploadComplete(async ({ metadata, file }) => ({ uploadedBy: metadata.userId, url: file.url })),
 
+  /** Pièce jointe messagerie support — image ou document (1 fichier / message). */
+  supportAttachment: f({
+    image: { maxFileSize: "8MB", maxFileCount: 1 },
+    pdf: { maxFileSize: "8MB", maxFileCount: 1 },
+  })
+    .middleware(async () => {
+      const session = await auth();
+      if (!session?.user) throw new UploadThingError("Non authentifié");
+      const rl = await rateLimit(`upload-support:${session.user.id}`, { limit: 20, windowMs: 10 * 60_000 });
+      if (!rl.success) throw new UploadThingError("Limite d'upload atteinte");
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => ({
+      uploadedBy: metadata.userId,
+      url: file.url,
+      name: file.name,
+    })),
+
   /** Image de ville — réservé ADMIN. */
   cityImage: f({ image: { maxFileSize: "4MB", maxFileCount: 1 } })
     .middleware(async () => {

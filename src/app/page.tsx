@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 
 /**
- * yamo-dashboard.cm — back-office Affinité (admin + dev + service client).
+ * dashboard.affinité.com — back-office Affinité (admin + dev + service client).
  *
  * Pas d'espace public : tous les visiteurs sont redirigés
  *   - non connecté → /connexion
@@ -20,6 +20,6 @@ export default async function DashboardRootPage() {
   }
 
   // ESCORT/CLIENT n'ont rien à faire ici → renvoyer sur affinité.com
-  const yamoUrl = process.env.NEXT_PUBLIC_AFFINITE_URL ?? "https://affinité.com";
-  redirect(yamoUrl);
+  const affiniteUrl = process.env.NEXT_PUBLIC_AFFINITE_URL ?? "https://affinité.com";
+  redirect(affiniteUrl);
 }

@@ -1,7 +1,7 @@
 import type { Role } from "@prisma/client";
 
 /**
- * URL externe vers le back-office admin (yamo-dashboard).
+ * URL externe vers le back-office admin (dashboard Affinité).
  * Configurable via NEXT_PUBLIC_DASHBOARD_URL ; à défaut, https://dashboard.affinité.com.
  */
 function getDashboardExternalUrl(): string {
@@ -11,12 +11,12 @@ function getDashboardExternalUrl(): string {
 /**
  * Retourne la destination après login selon le rôle.
  *
- * Architecture v2 (depuis 2026) : escort/client sont intégrés à yamo (interne).
- * Seul l'admin est externe (yamo-dashboard / dashboard.affinité.com).
+ * Architecture v2 (depuis 2026) : escort/client sont intégrés au site public (interne).
+ * Seul l'admin est externe (dashboard Affinité / dashboard.affinité.com).
  *
  *   - ADMIN / MODERATOR → URL externe back-office
- *   - ESCORT            → /escort/dashboard (interne yamo)
- *   - CLIENT            → /client (interne yamo)
+ *   - ESCORT            → /escort/dashboard (interne)
+ *   - CLIENT            → /client (interne)
  */
 export function getDashboardNamespace(role: Role): string {
   if (role === "ADMIN" || role === "MODERATOR") {

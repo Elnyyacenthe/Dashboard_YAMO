@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
-import { signInSchema } from "@/lib/validations/auth";
+import { signInSchema, PHONE_REGEX } from "@/lib/validations/auth";
 
 const nextAuthResult = NextAuth({
   ...authConfig,
@@ -24,12 +24,21 @@ const nextAuthResult = NextAuth({
         const { identifier, password } = parsed.data;
         const isEmail = identifier.includes("@");
         const cleanedPhone = identifier.replace(/\s/g, "").replace(/^237/, "+237");
+        const looksLikePhone = PHONE_REGEX.test(identifier.replace(/\s/g, ""));
 
         const user = await prisma.user.findFirst({
-          where: isEmail ? { email: identifier } : { phone: cleanedPhone },
+          where: isEmail
+            ? { email: identifier }
+            : looksLikePhone
+              ? { phone: cleanedPhone }
+              : { username: identifier },
         });
         if (!user?.password) return null;
-        if (user.isBanned) return null;
+        // Une escorte bannie peut quand même se connecter : elle atterrit sur
+        // un écran "compte bloqué" avec pour seule option la messagerie
+        // support, pour pouvoir se justifier (cf. escort/layout.tsx).
+        // Les autres rôles bannis restent bloqués dès la connexion.
+        if (user.isBanned && user.role !== "ESCORT") return null;
 
         const ok = await bcrypt.compare(password, user.password);
         if (!ok) return null;
