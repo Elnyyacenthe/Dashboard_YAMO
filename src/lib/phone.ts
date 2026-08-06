@@ -11,3 +11,13 @@ export function normalizeCameroonPhone(phone: string): string {
   if (digits.length === 9) return "237" + digits;
   return digits;
 }
+
+/**
+ * Format de stockage/affichage de `User.phone` : +237XXXXXXXXX. Toujours
+ * utiliser cette fonction (pas de concaténation ad-hoc) avant d'écrire ou de
+ * comparer un numéro sur ce champ, sinon deux formats différents pour le
+ * même numéro contournent la contrainte unique en base.
+ */
+export function formatCameroonPhone(phone: string): string {
+  return `+${normalizeCameroonPhone(phone)}`;
+}

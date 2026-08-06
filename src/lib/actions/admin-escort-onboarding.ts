@@ -8,6 +8,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
 import { getEscortSubscriptionPricing } from "@/lib/escort-subscription";
+import { formatCameroonPhone } from "@/lib/phone";
+import { PHONE_REGEX } from "@/lib/validations/auth";
 
 const createSchema = z
   .object({
@@ -55,8 +57,13 @@ export async function adminCreateEscortAction(
   }
   const data = parsed.data;
 
+  if (!PHONE_REGEX.test(data.phone.replace(/\s/g, ""))) {
+    return { ok: false, error: "Numéro camerounais invalide (ex : +237 6XX XX XX XX)" };
+  }
+  const phone = formatCameroonPhone(data.phone);
+
   const existing = await prisma.user.findFirst({
-    where: { OR: [{ email: data.email }, { phone: data.phone }] },
+    where: { OR: [{ email: data.email }, { phone }] },
     select: { id: true },
   });
   if (existing) {
@@ -74,7 +81,7 @@ export async function adminCreateEscortAction(
       data: {
         name: data.name,
         email: data.email,
-        phone: data.phone,
+        phone,
         password: hashed,
         role: "ESCORT",
         emailVerified: new Date(),
