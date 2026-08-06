@@ -59,7 +59,8 @@ export default async function AdminEscortOnboardingPage() {
                     </p>
                     {meta && (
                       <p className="mt-1 text-xs">
-                        Tier <strong>{meta.tier}</strong> · {meta.months} mois · jusqu'au{" "}
+                        Tier <strong>{meta.tier}</strong> ·{" "}
+                        {meta.tier === "STANDARD" ? "1 semaine" : `${meta.months} mois`} · jusqu'au{" "}
                         {meta.until && new Date(meta.until).toLocaleDateString("fr-FR")}
                         {meta.notes && <> · <em>{meta.notes}</em></>}
                       </p>

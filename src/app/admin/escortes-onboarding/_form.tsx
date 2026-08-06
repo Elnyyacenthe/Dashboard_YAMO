@@ -27,6 +27,7 @@ function generatePassword(): string {
 export function OnboardForm() {
   const [showPwd, setShowPwd] = useState(false);
   const [generatedPwd, setGeneratedPwd] = useState("");
+  const [tier, setTier] = useState<"STANDARD" | "PREMIUM" | "VIP">("STANDARD");
   const [state, formAction, pending] = useActionState<AdminOnboardResult | null, FormData>(
     adminCreateEscortAction,
     null,
@@ -99,12 +100,12 @@ export function OnboardForm() {
       <div className="grid gap-4 md:grid-cols-2">
         <div>
           <Label htmlFor="tier">Tier d'abonnement *</Label>
-          <Select name="tier" defaultValue="STANDARD">
+          <Select name="tier" defaultValue="STANDARD" onValueChange={(v) => setTier(v as typeof tier)}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="STANDARD">Standard (2 000 FCFA/mois)</SelectItem>
+              <SelectItem value="STANDARD">Standard (2 500 FCFA/semaine)</SelectItem>
               <SelectItem value="PREMIUM">Premium (5 000 FCFA/mois)</SelectItem>
               <SelectItem value="VIP">VIP (15 000 FCFA/mois)</SelectItem>
             </SelectContent>
@@ -112,17 +113,24 @@ export function OnboardForm() {
         </div>
         <div>
           <Label htmlFor="months">Durée *</Label>
-          <Select name="months" defaultValue="1">
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">1 mois</SelectItem>
-              <SelectItem value="3">3 mois</SelectItem>
-              <SelectItem value="6">6 mois</SelectItem>
-              <SelectItem value="12">12 mois</SelectItem>
-            </SelectContent>
-          </Select>
+          {tier === "STANDARD" ? (
+            <>
+              <Input value="1 semaine (fixe)" disabled />
+              <input type="hidden" name="months" value="1" />
+            </>
+          ) : (
+            <Select name="months" defaultValue="1">
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 mois</SelectItem>
+                <SelectItem value="3">3 mois</SelectItem>
+                <SelectItem value="6">6 mois</SelectItem>
+                <SelectItem value="12">12 mois</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
 

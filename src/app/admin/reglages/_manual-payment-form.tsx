@@ -15,6 +15,7 @@ interface Values {
   mtnNumber: string;
   orangeNumber: string;
   instructions: string;
+  verificationTelegramLink: string;
 }
 
 export function ManualPaymentSettingsForm({ defaultValues }: { defaultValues: Values }) {
@@ -66,6 +67,20 @@ export function ManualPaymentSettingsForm({ defaultValues }: { defaultValues: Va
           onChange={(e) => setValues({ ...values, instructions: e.target.value })}
           placeholder="Ex : envoyez le montant exact et gardez le SMS de confirmation."
         />
+      </div>
+      <div className="space-y-1.5 md:col-span-2">
+        <Label htmlFor="mp-telegram">Lien Telegram — vérification d'identité</Label>
+        <Input
+          id="mp-telegram"
+          value={values.verificationTelegramLink}
+          onChange={(e) => setValues({ ...values, verificationTelegramLink: e.target.value })}
+          placeholder="Ex : 678876470, +237678876470 ou https://t.me/NomDuCompte"
+        />
+        <p className="text-xs text-muted-foreground">
+          Compte Telegram (numéro MTN réservé) vers lequel l'escorte est redirigée après avoir déclaré
+          son paiement de vérification, pour envoyer ses documents. Numéro local (9 chiffres), format
+          international (+237...) ou lien/pseudo t.me — tous acceptés, normalisés automatiquement.
+        </p>
       </div>
       <div className="md:col-span-2">
         <Button onClick={save} disabled={pending}>

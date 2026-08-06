@@ -53,6 +53,32 @@ export async function getCapsForTier(
   return { ads, photos };
 }
 
+export interface EscortSubPricing {
+  /** Prix pour une période (voir `days`). */
+  amount: number;
+  /** Durée en jours d'une période payée. Standard = 1 semaine fixe, Premium/VIP = 1 mois. */
+  days: number;
+}
+
+const PRICING_DEFAULTS: Record<string, EscortSubPricing> = {
+  standard: { amount: 2500, days: 7 },
+  premium: { amount: 5000, days: 30 },
+  vip: { amount: 15000, days: 30 },
+};
+
+/** Prix + durée d'une période pour un tier d'abonnement (configurable via SiteSetting). */
+export async function getEscortSubscriptionPricing(
+  tier: Exclude<EscortSubscriptionTier, "NONE">,
+): Promise<EscortSubPricing> {
+  const tierKey = tier.toLowerCase();
+  const fallback = PRICING_DEFAULTS[tierKey];
+  const [amount, days] = await Promise.all([
+    getSettingNumber(`pricing.escortSubscription.${tierKey}.amount`, fallback.amount),
+    getSettingNumber(`pricing.escortSubscription.${tierKey}.days`, fallback.days),
+  ]);
+  return { amount, days };
+}
+
 /**
  * Guard à appeler AVANT la publication d'une annonce.
  * Refuse si pas d'abonnement actif OU si le quota d'annonces actives est atteint.

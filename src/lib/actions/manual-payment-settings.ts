@@ -11,6 +11,7 @@ const schema = z.object({
   mtnNumber: z.string().trim().max(20).optional().default(""),
   orangeNumber: z.string().trim().max(20).optional().default(""),
   instructions: z.string().trim().max(500).optional().default(""),
+  verificationTelegramLink: z.string().trim().max(200).optional().default(""),
 });
 
 type ManualPaymentSettingsInput = z.infer<typeof schema>;
@@ -20,6 +21,7 @@ const KEYS: Record<keyof ManualPaymentSettingsInput, string> = {
   mtnNumber: "payment.manual.mtnNumber",
   orangeNumber: "payment.manual.orangeNumber",
   instructions: "payment.manual.instructions",
+  verificationTelegramLink: "verification.telegramLink",
 };
 
 const LABELS: Record<keyof ManualPaymentSettingsInput, string> = {
@@ -27,6 +29,7 @@ const LABELS: Record<keyof ManualPaymentSettingsInput, string> = {
   mtnNumber: "Numéro MTN Mobile Money",
   orangeNumber: "Numéro Orange Money",
   instructions: "Instructions complémentaires",
+  verificationTelegramLink: "Lien Telegram — vérification d'identité",
 };
 
 /** Met à jour les coordonnées Mobile Money affichées aux escortes pour le paiement manuel. Réservé ADMIN. */
@@ -47,7 +50,12 @@ export async function updateManualPaymentSettingsAction(
       prisma.siteSetting.upsert({
         where: { key },
         update: { value: parsed.data[field] },
-        create: { key, value: parsed.data[field], category: "manual_payment", label: LABELS[field] },
+        create: {
+          key,
+          value: parsed.data[field],
+          category: field === "verificationTelegramLink" ? "verification" : "manual_payment",
+          label: LABELS[field],
+        },
       }),
     ),
   );

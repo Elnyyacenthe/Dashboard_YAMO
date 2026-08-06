@@ -46,15 +46,6 @@ export const ourFileRouter = {
     })
     .onUploadComplete(async ({ metadata, file }) => ({ uploadedBy: metadata.userId, url: file.url })),
 
-  /** Documents d'identité — recto, verso, selfie (3 fichiers max, 5MB l'un). */
-  verificationDocs: f({ image: { maxFileSize: "8MB", maxFileCount: 3 } })
-    .middleware(async () => {
-      const session = await auth();
-      if (!session?.user) throw new UploadThingError("Non authentifié");
-      return { userId: session.user.id };
-    })
-    .onUploadComplete(async ({ metadata, file }) => ({ uploadedBy: metadata.userId, url: file.url })),
-
   /** Pièce jointe messagerie support — image ou document (1 fichier / message). */
   supportAttachment: f({
     image: { maxFileSize: "8MB", maxFileCount: 1 },

@@ -1,105 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { generateReactHelpers } from "@uploadthing/react";
-import { Loader2, Send, Paperclip, X, ShieldOff } from "lucide-react";
+import { Loader2, ShieldOff } from "lucide-react";
 import { toast } from "sonner";
 import type { TicketStatus } from "@prisma/client";
 
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { adminReplyTicketAction, setTicketStatusAction, dismissTicketAction } from "@/lib/actions/support";
-import type { OurFileRouter } from "@/lib/uploadthing";
-
-const { useUploadThing } = generateReactHelpers<OurFileRouter>();
-
-export function AdminReplyForm({ ticketId }: { ticketId: string }) {
-  const router = useRouter();
-  const [body, setBody] = useState("");
-  const [attachment, setAttachment] = useState<{ url: string; name: string } | null>(null);
-  const [pending, startTransition] = useTransition();
-
-  const { startUpload, isUploading } = useUploadThing("supportAttachment", {
-    onClientUploadComplete: (res) => {
-      if (res?.[0]) setAttachment({ url: res[0].url, name: res[0].name });
-    },
-    onUploadError: (err) => {
-      toast.error(err.message);
-    },
-  });
-
-  const busy = pending || isUploading;
-
-  function submit() {
-    if (!body.trim() && !attachment) return;
-    startTransition(async () => {
-      const res = await adminReplyTicketAction({
-        ticketId,
-        body,
-        attachmentUrl: attachment?.url,
-        attachmentName: attachment?.name,
-      });
-      if (res.ok) {
-        toast.success("Réponse envoyée");
-        setBody("");
-        setAttachment(null);
-        router.refresh();
-      } else toast.error(res.error);
-    });
-  }
-
-  return (
-    <div className="space-y-2">
-      <Textarea
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        placeholder="Votre réponse à l'utilisateur…"
-        rows={5}
-        disabled={busy}
-      />
-
-      {attachment && (
-        <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs">
-          <Paperclip className="h-3.5 w-3.5 shrink-0 text-primary" />
-          <span className="flex-1 truncate">{attachment.name}</span>
-          <button type="button" onClick={() => setAttachment(null)} className="text-muted-foreground hover:text-foreground">
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <label
-            htmlFor="admin-support-attachment-input"
-            className="flex cursor-pointer items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <Paperclip className="h-4 w-4" />
-            {isUploading ? "Envoi…" : "Joindre un fichier"}
-          </label>
-          <input
-            id="admin-support-attachment-input"
-            type="file"
-            accept="image/*,application/pdf"
-            className="hidden"
-            disabled={busy}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) startUpload([file]);
-              e.target.value = "";
-            }}
-          />
-        </div>
-        <Button onClick={submit} disabled={busy || (!body.trim() && !attachment)}>
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          Envoyer
-        </Button>
-      </div>
-    </div>
-  );
-}
+import { setTicketStatusAction, dismissTicketAction } from "@/lib/actions/support";
 
 export function StatusSwitcher({
   ticketId,

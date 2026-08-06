@@ -1,45 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { timeAgo } from "@/lib/utils";
-import { AdminReplyForm, StatusSwitcher } from "./_admin-form";
-
-function isImageFile(name?: string | null) {
-  return !!name && /\.(jpe?g|png|gif|webp|avif)$/i.test(name);
-}
-
-function Attachment({ url, name }: { url: string; name?: string | null }) {
-  if (isImageFile(name)) {
-    return (
-      <a href={url} target="_blank" rel="noopener noreferrer" className="mt-2 block">
-        <Image
-          src={url}
-          alt={name ?? "Pièce jointe"}
-          width={220}
-          height={220}
-          className="max-h-56 w-auto rounded-lg border border-border/60 object-cover"
-        />
-      </a>
-    );
-  }
-  return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="mt-2 flex items-center gap-2 rounded-lg border border-border/60 bg-secondary/40 px-3 py-2 text-sm hover:border-primary/50"
-    >
-      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-      <span className="truncate">{name ?? "Document joint"}</span>
-    </a>
-  );
-}
+import { AdminSupportThread } from "@/components/support/admin-support-thread";
+import { StatusSwitcher } from "./_admin-form";
 
 export default async function AdminTicketPage({
   params,
@@ -51,8 +20,8 @@ export default async function AdminTicketPage({
   const ticket = await prisma.supportTicket.findUnique({
     where: { id },
     include: {
-      user: { select: { name: true, email: true, role: true, phone: true } },
-      messages: { orderBy: { createdAt: "asc" }, include: { author: { select: { name: true } } } },
+      user: { select: { name: true, email: true, role: true, phone: true, image: true } },
+      messages: { orderBy: { createdAt: "asc" } },
     },
   });
   if (!ticket) notFound();
@@ -78,30 +47,13 @@ export default async function AdminTicketPage({
 
       <StatusSwitcher ticketId={ticket.id} currentStatus={ticket.status} />
 
-      <div className="space-y-3">
-        {ticket.messages.map((m) => (
-          <Card key={m.id} className={m.isAdmin ? "border-primary/40 bg-primary/5" : "border-border/60"}>
-            <CardContent className="space-y-2 p-4">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <strong className={m.isAdmin ? "text-primary" : ""}>
-                  {m.isAdmin ? "🛡️ Équipe" : m.author.name ?? "Utilisateur"}
-                </strong>
-                <span>{timeAgo(m.createdAt)}</span>
-              </div>
-              {m.body && <p className="whitespace-pre-wrap text-sm">{m.body}</p>}
-              {m.attachmentUrl && <Attachment url={m.attachmentUrl} name={m.attachmentName} />}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {ticket.status !== "CLOSED" && (
-        <Card>
-          <CardContent className="p-4">
-            <AdminReplyForm ticketId={ticket.id} />
-          </CardContent>
-        </Card>
-      )}
+      <AdminSupportThread
+        ticketId={ticket.id}
+        messages={ticket.messages}
+        userName={ticket.user.name ?? ticket.user.email ?? "Utilisateur"}
+        userImage={ticket.user.image}
+        closed={ticket.status === "CLOSED"}
+      />
     </div>
   );
 }

@@ -6,18 +6,23 @@ import { z } from "zod";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { getSettingNumber } from "@/lib/settings";
 import { slugify } from "@/lib/utils";
+import { getEscortSubscriptionPricing } from "@/lib/escort-subscription";
 
-const createSchema = z.object({
-  name: z.string().trim().min(2).max(50),
-  email: z.string().email(),
-  phone: z.string().trim().min(8).max(20),
-  password: z.string().min(8).max(50),
-  tier: z.enum(["STANDARD", "PREMIUM", "VIP"]),
-  months: z.coerce.number().int().min(1).max(12),
-  notes: z.string().max(500).optional(),
-});
+const createSchema = z
+  .object({
+    name: z.string().trim().min(2).max(50),
+    email: z.string().email(),
+    phone: z.string().trim().min(8).max(20),
+    password: z.string().min(8).max(50),
+    tier: z.enum(["STANDARD", "PREMIUM", "VIP"]),
+    months: z.coerce.number().int().min(1).max(12),
+    notes: z.string().max(500).optional(),
+  })
+  .refine((data) => data.tier !== "STANDARD" || data.months === 1, {
+    message: "Le tier Standard est une période fixe d'une semaine (1 seule unité)",
+    path: ["months"],
+  });
 
 export type AdminOnboardResult =
   | { ok: true; userId: string }
@@ -58,8 +63,8 @@ export async function adminCreateEscortAction(
     return { ok: false, error: "Un compte avec cet email ou ce téléphone existe déjà" };
   }
 
-  const daysPerMonth = await getSettingNumber("pricing.escortSubscription.days", 30);
-  const totalDays = daysPerMonth * data.months;
+  const pricing = await getEscortSubscriptionPricing(data.tier);
+  const totalDays = pricing.days * data.months;
   const until = new Date(Date.now() + totalDays * 86_400_000);
 
   const hashed = await bcrypt.hash(data.password, 10);
@@ -133,6 +138,9 @@ export async function adminActivateSubscriptionAction(input: {
   if (input.months < 1 || input.months > 12) {
     return { ok: false, error: "Durée invalide (1-12 mois)" };
   }
+  if (input.tier === "STANDARD" && input.months !== 1) {
+    return { ok: false, error: "Le tier Standard est une période fixe d'une semaine (1 seule unité)" };
+  }
 
   const user = await prisma.user.findUnique({
     where: { id: input.userId },
@@ -140,8 +148,8 @@ export async function adminActivateSubscriptionAction(input: {
   });
   if (!user) return { ok: false, error: "Utilisateur introuvable" };
 
-  const daysPerMonth = await getSettingNumber("pricing.escortSubscription.days", 30);
-  const days = daysPerMonth * input.months;
+  const pricing = await getEscortSubscriptionPricing(input.tier);
+  const days = pricing.days * input.months;
   const now = new Date();
   const base = user.escortSubscriptionUntil && user.escortSubscriptionUntil > now
     ? user.escortSubscriptionUntil

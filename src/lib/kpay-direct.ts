@@ -9,10 +9,10 @@ import {
   getDepositStatus,
   classifyStatus,
   makeExternalId,
-  normalizePhoneForKpay,
   isKpayConfigured,
   KpayError,
 } from "@/lib/kpay";
+import { normalizeCameroonPhone } from "@/lib/phone";
 
 // =====================================================================
 // INTENT — action métier à appliquer après confirmation K-Pay
@@ -61,7 +61,7 @@ export async function kpayOneShotPayment(input: InitPaymentInput): Promise<InitP
     return { ok: false, error: "Le système de paiement est temporairement indisponible." };
   }
 
-  const phone = normalizePhoneForKpay(input.phone);
+  const phone = normalizeCameroonPhone(input.phone);
   if (phone.length !== 12 || !phone.startsWith("237")) {
     return { ok: false, error: "Numéro Cameroun invalide" };
   }

@@ -132,14 +132,45 @@ export async function setUserRoleAction(userId: string, role: Role) {
 
 export async function setProfileVerifiedAction(profileId: string, verified: boolean) {
   const admin = await requireAdmin();
-  await prisma.escortProfile.update({
+  const profile = await prisma.escortProfile.update({
     where: { id: profileId },
     data: {
       isVerified: verified,
       verification: verified ? "VERIFIED" : "REJECTED",
       verifiedAt: verified ? new Date() : null,
     },
+    select: { userId: true },
   });
+
+  // Synchronise la demande de vérification en attente (documents envoyés sur
+  // Telegram) avec la décision admin, pour que /escort/verification reflète le bon statut.
+  const pendingVerif = await prisma.idVerification.findFirst({
+    where: { userId: profile.userId, status: "PENDING" },
+    orderBy: { createdAt: "desc" },
+  });
+  if (pendingVerif) {
+    await prisma.idVerification.update({
+      where: { id: pendingVerif.id },
+      data: {
+        status: verified ? "VERIFIED" : "REJECTED",
+        rejectionReason: verified ? null : "Documents non validés (revue Telegram)",
+        reviewedById: admin.id,
+        reviewedAt: new Date(),
+      },
+    });
+  }
+
+  await prisma.notification.create({
+    data: {
+      userId: profile.userId,
+      title: verified ? "Profil vérifié ✅" : "Vérification retirée",
+      body: verified
+        ? "Vos documents ont été validés. Le badge Vérifié s'affiche désormais sur vos annonces."
+        : "Votre statut de vérification a été retiré ou refusé. Contactez le service client pour plus d'informations.",
+      link: verified ? "/escort/profil" : "/escort/verification",
+    },
+  });
+
   await prisma.auditLog.create({
     data: {
       actorId: admin.id,

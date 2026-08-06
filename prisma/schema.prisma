@@ -570,11 +570,11 @@ model WithdrawalRequest {
 model IdVerification {
   id              String             @id @default(cuid())
   userId          String
-  documentType    IdDocType
-  documentNumber  String             // Hash SHA-256 — NE PAS stocker en clair
-  documentFrontUrl String
+  documentType    IdDocType?
+  documentNumber  String?            // Hash SHA-256 — NE PAS stocker en clair
+  documentFrontUrl String?
   documentBackUrl String?
-  selfieUrl       String
+  selfieUrl       String?
   status          VerificationStatus @default(PENDING)
   rejectionReason String?
   reviewedById    String?

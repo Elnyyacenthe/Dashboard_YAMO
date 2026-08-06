@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Prisma, Role } from "@prisma/client";
 
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,9 @@ export default async function AdminUsersPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
+  const session = await auth();
+  const isAdmin = session?.user.role === "ADMIN";
+
   const sp = await searchParams;
   const q = sp.q ?? "";
   const role = sp.role as Role | undefined;
@@ -127,6 +131,7 @@ export default async function AdminUsersPage({
                       isBanned={u.isBanned}
                       isVerified={u.escortProfile?.isVerified ?? false}
                       currentRole={u.role}
+                      canChangeRole={isAdmin}
                     />
                   </td>
                 </tr>

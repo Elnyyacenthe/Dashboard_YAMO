@@ -20,9 +20,11 @@ interface Props {
   isBanned: boolean;
   isVerified: boolean;
   currentRole: Role;
+  /** Changer le rôle d'un compte est réservé ADMIN — un MODERATOR ne voit pas l'option. */
+  canChangeRole: boolean;
 }
 
-export function UserActions({ userId, profileId, isBanned, isVerified, currentRole }: Props) {
+export function UserActions({ userId, profileId, isBanned, isVerified, currentRole, canChangeRole }: Props) {
   const [pending, startTransition] = useTransition();
 
   function toggleBan() {
@@ -75,7 +77,7 @@ export function UserActions({ userId, profileId, isBanned, isVerified, currentRo
             )}
           </DropdownMenuItem>
         )}
-        {(["CLIENT", "ESCORT", "MODERATOR", "ADMIN"] as Role[]).map((r) => (
+        {canChangeRole && (["CLIENT", "ESCORT", "MODERATOR", "ADMIN"] as Role[]).map((r) => (
           <DropdownMenuItem
             key={r}
             disabled={r === currentRole}

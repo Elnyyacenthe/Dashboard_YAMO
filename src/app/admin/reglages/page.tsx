@@ -1,15 +1,22 @@
+import { redirect } from "next/navigation";
+
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { getSettingString } from "@/lib/settings";
 import { ManualPaymentSettingsForm } from "./_manual-payment-form";
 
 export default async function SettingsPage() {
-  const [settings, recipientName, mtnNumber, orangeNumber, instructions] = await Promise.all([
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") redirect("/admin");
+
+  const [settings, recipientName, mtnNumber, orangeNumber, instructions, verificationTelegramLink] = await Promise.all([
     prisma.siteSetting.findMany(),
     getSettingString("payment.manual.recipientName", ""),
     getSettingString("payment.manual.mtnNumber", "678876470"),
     getSettingString("payment.manual.orangeNumber", "640528712"),
     getSettingString("payment.manual.instructions", ""),
+    getSettingString("verification.telegramLink", ""),
   ]);
 
   return (
@@ -28,7 +35,7 @@ export default async function SettingsPage() {
             <span className="font-medium">Paiements</span>.
           </p>
           <ManualPaymentSettingsForm
-            defaultValues={{ recipientName, mtnNumber, orangeNumber, instructions }}
+            defaultValues={{ recipientName, mtnNumber, orangeNumber, instructions, verificationTelegramLink }}
           />
         </CardContent>
       </Card>

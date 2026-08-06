@@ -1,11 +1,16 @@
+import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
 
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { CityRow } from "./_city-row";
 import { NewCityButton } from "./_new-city-button";
 
 export default async function AdminCitiesPage() {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") redirect("/admin");
+
   const cities = await prisma.city.findMany({
     orderBy: [{ isPopular: "desc" }, { order: "asc" }],
     include: { _count: { select: { ads: { where: { status: "ACTIVE" } } } } },
