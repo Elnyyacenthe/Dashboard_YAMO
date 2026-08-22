@@ -10,6 +10,8 @@ const CATEGORY_LABELS: Record<string, { title: string; color: string }> = {
   pricing: { title: "💰 Tarifs Premium / VIP", color: "border-primary/30" },
   referral: { title: "🎁 Bonus parrainage", color: "border-amber-500/30" },
   limits: { title: "⚙️ Limites (dépôt / retrait)", color: "border-sky-500/30" },
+  free_trial: { title: "🎁 Essai gratuit nouvelles escortes (voir Réglages)", color: "border-violet-500/30" },
+  manual_payment: { title: "💳 Paiement manuel (voir Réglages)", color: "border-emerald-500/30" },
   general: { title: "Autres", color: "border-border" },
 };
 

@@ -51,6 +51,7 @@ export default async function AdminUsersPage({
   ]);
 
   const pages = Math.ceil(total / PER_PAGE);
+  const now = new Date();
 
   return (
     <div className="space-y-6">
@@ -107,6 +108,18 @@ export default async function AdminUsersPage({
                   </td>
                   <td className="p-3">
                     <Badge variant="outline">{u.role}</Badge>
+                    {/* v21 — essai gratuit en cours (abonnement offert non encore prolongé par un paiement) */}
+                    {u.escortTrialEndsAt &&
+                      u.escortSubscriptionUntil &&
+                      u.escortSubscriptionUntil > now &&
+                      u.escortSubscriptionUntil <= u.escortTrialEndsAt && (
+                        <div
+                          className="mt-1 text-[10px] font-semibold text-violet-400"
+                          title={`Essai gratuit jusqu'au ${u.escortTrialEndsAt.toLocaleDateString("fr-FR")}`}
+                        >
+                          🎁 Essai · {u.escortTrialEndsAt.toLocaleDateString("fr-FR")}
+                        </div>
+                      )}
                   </td>
                   <td className="p-3">{u._count.ads}</td>
                   <td className="p-3">

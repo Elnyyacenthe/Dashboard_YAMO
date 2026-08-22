@@ -1,4 +1,4 @@
-// Yamo — Plateforme d'annonces d'escorts au Cameroun
+// affinité — Plateforme d'annonces d'escorts au Cameroun
 // Schéma Prisma complet : utilisateurs, profils escorts, annonces, villes,
 // paiements, signalements, médias, sessions Auth.js, wallet, MoMo, parrainage.
 
@@ -187,6 +187,14 @@ model User {
   escortSubscriptionUntil      DateTime?
   escortSubscriptionAutoRenew  Boolean                @default(false)
 
+  // === v21 — Essai gratuit nouvelles escortes ===
+  /// Date d'octroi de l'essai gratuit. Non nul = essai déjà consommé
+  /// (même expiré) → il ne peut jamais être réattribué au même compte.
+  escortTrialStartedAt         DateTime?
+  /// Fin de l'essai offert. Sert aussi à distinguer un abonnement d'essai
+  /// d'un abonnement payé (escortSubscriptionUntil <= escortTrialEndsAt).
+  escortTrialEndsAt            DateTime?
+
   // === Wallet & Parrainage (legacy, à drop en v9) ===
   walletBalance     Int       @default(0)          // Solde en FCFA
   referralCode      String?   @unique               // Code parrainage unique YAMO-XXXX
@@ -227,6 +235,7 @@ model User {
   @@index([referredById])
   @@index([identityHash])
   @@index([escortSubscriptionUntil])
+  @@index([escortTrialEndsAt])
 }
 
 model Account {
